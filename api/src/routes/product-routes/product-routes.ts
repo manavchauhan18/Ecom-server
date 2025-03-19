@@ -1,14 +1,9 @@
 import { Router } from "express";
-
+import productController from "../../../controllers/products-controller";
 const router = Router();
 
-router.get("/", (req, res) => {
-    res.send("Product List");
-});
+router.get("/", productController.listProducts);
 
-router.get("/:id", (req, res) => {
-    console.log(req.params);
-    res.send('A product');
-})
+router.get("/:id", productController.getProductById)
 
 module.exports = router; 
