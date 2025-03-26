@@ -1,5 +1,7 @@
 import mongoose, { Schema, Document } from "mongoose";
+import { v4 as uuidv4 } from 'uuid';
 interface productData extends Document {
+    _id: string;
     name: String;
     price: number;
     description?: String;
@@ -11,6 +13,7 @@ interface productData extends Document {
 
 const productSchema: Schema = new Schema(
     {
+        _id: { type: String, default: uuidv4 },
         name: { type: String, required: true },
         price: { type: Number, required: true },
         description: { type: String },

@@ -1,10 +1,13 @@
 import { Router } from "express";
 import productController from "../../../controllers/products-controller";
+import { validateData } from "../../../middlewares/validateData";
+import { rateLimiter, getDataFromRedis } from "../../../middlewares/utils";
+
 const router = Router();
 
 router.get("/", productController.listProducts);
-router.get("/productid/:id", productController.getProductById);
-router.post("/create", productController.addProduct);
+router.get("/productid/:id", rateLimiter, getDataFromRedis('product'),productController.getProductById);
+router.post("/create", validateData, productController.addProduct);
 router.delete('/deleteproductbyid/:id', productController.deleteProduct);
 router.put('/updateproduct/:id', productController.updateProduct)
 

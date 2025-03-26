@@ -1,5 +1,5 @@
 import express, { Application, Request, Response, NextFunction } from "express";
-import { failResponse } from "../../scripts/utilities";
+import { failResponse } from "../../scripts/responseStatus";
 
 const productRoutes = require('./product-routes/product-routes');
 

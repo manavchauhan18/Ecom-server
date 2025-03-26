@@ -7,7 +7,7 @@ const successResponse = <T>(
     statusCode: number = 200
 ) => {
     return res.status(statusCode).json({
-        status: "success",
+        status: "true",
         message,
         data,
         timestamp: new Date().toISOString(),
@@ -21,7 +21,7 @@ const failResponse = (
     errors?: Record<string, unknown>
 ) => {
     return res.status(statusCode).json({
-        status: "fail",
+        status: "false",
         message: error,
         errors: errors || null,
         timestamp: new Date().toISOString(),
