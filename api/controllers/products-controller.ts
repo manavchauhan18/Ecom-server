@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import product from "../database/schemas/product.schema";
 import { successResponse, failResponse } from "../scripts/responseStatus";
 import Product from "../database/schemas/product.schema";
+import redis from "../config/redisClient";
 
 
 const listProducts = async (req: Request, res: Response) => {
@@ -15,6 +16,7 @@ const getProductById = async (req: Request, res: Response) => {
 
         const dbData = await Product.findById(id);
         if(dbData) {
+            await redis.set(`product:${id}`, JSON.stringify(dbData), "EX", 86400);
             successResponse(res, dbData, "Product found", 201);
             return; 
         } else {

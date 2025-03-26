@@ -6,6 +6,7 @@ export const rateLimiter = async ( req: Request, res: Response, next: NextFuncti
     try {
         const ip = req.ip || "unknown";
         const key = `rate:${ip}`;
+        console.log("key: ", key)
         const errors: any = {}
     
         const request = await redis.incr(key);
@@ -33,11 +34,15 @@ export const getDataFromRedis = ( keyPrefix: string ) => {
             const { id } = req.params;
             const cacheKey = `${keyPrefix}:${id}`;
 
-            const cachedData = await redis.get(cacheKey);
-
-            successResponse(res, cachedData, "Product fetched from redis successfully", 201); 
-            next();
-            return;
+            
+            let cachedData = await redis.get(cacheKey);
+            if(!cachedData) {
+                next();
+            } else {
+                cachedData = JSON.parse(cachedData);
+                successResponse(res, cachedData, "Product fetched from redis successfully", 201);
+                return;
+            }
         } catch (err) {
             failResponse(res, "Internal Server Error", 500, err);
             return;
