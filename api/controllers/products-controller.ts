@@ -14,7 +14,7 @@ const getProductById = async (req: Request, res: Response) => {
 
 const addProduct = async (req: Request, res: Response) => {
     try {
-        const { name, price, description, category, stock } = req.body;
+        const { name, price, description, category, stock, value } = req.body;
         const errors: any = {};
 
         if (!name || typeof name !== "string" || name.length < 3) {
@@ -33,6 +33,16 @@ const addProduct = async (req: Request, res: Response) => {
             errors.stock = "Stock must be a boolean value.";
         }
 
+        if(value !== undefined && (typeof value !== "number")) {
+            errors.value = "Value must of type integer";
+        } else {
+            if(stock === false) {
+                errors.value = "The value for stock is false";
+            } else if(stock === true && value <= 0) {
+                errors.value = "Value must be valid.";
+            }
+        }
+
         if (Object.keys(errors).length > 0) {
             failResponse(res, "Validation failed", 400, errors);
             return;
@@ -45,7 +55,7 @@ const addProduct = async (req: Request, res: Response) => {
             return;
         }
 
-        const newProduct = new product({ name, price, description, category, stock });
+        const newProduct = new product({ name, price, description, category, stock, value });
         await newProduct.save();
 
         successResponse(res, newProduct, "Product created successfully", 201);   
