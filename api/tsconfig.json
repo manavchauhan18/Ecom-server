@@ -11,7 +11,7 @@
       "resolveJsonModule": true, // Include JSON imports
       "forceConsistentCasingInFileNames": true,
       "noEmit": false, // Allow emitting output
-      "isolatedModules": true, // Required for using ESM modules
+      "isolatedModules": false, // Required for using ESM modules
       "baseUrl": ".", // Allow absolute imports relative to project root
       "paths": {
         "*": ["node_modules/*"]
