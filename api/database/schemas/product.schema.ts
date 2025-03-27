@@ -9,6 +9,7 @@ interface productData extends Document {
     stock: Boolean;
     value: number;
     createdAt: Date;
+    deleteStatus: Boolean;
 }
 
 const productSchema: Schema = new Schema(
@@ -20,7 +21,8 @@ const productSchema: Schema = new Schema(
         category: { type: String, required: true },
         stock: { type: Boolean, required: true, default: false },
         value: { type: Number, required: true, default: 0 },
-        createdAt: { type: Date, default: Date.now }
+        createdAt: { type: Date, default: Date.now },
+        deleteStatus: { type: Boolean, default: false }
     },
     { versionKey: false }
 )
