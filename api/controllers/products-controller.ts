@@ -54,11 +54,38 @@ const addProduct = async (req: Request, res: Response) => {
 }
 
 const updateProduct = async (req: Request, res: Response) => {
-    // const { id, name, price, description, category, stock } = req.body;
-    // const errors: any = {};
+    try {
+        const { id } = req.params;
+        const { name, price, description, category, stock, value } = req.body;
 
-    // const existingProduct = await product.findById(id);
+        const updateData: any = {};
+        if (name) updateData.name = name;
+        if (price) updateData.price = price;
+        if (description) updateData.description = description;
+        if (category) updateData.category = category;
+        if (stock) updateData.stock = stock;
+        if (value) updateData.value = value;
+        const errors: any = {};
 
+        const updatedProduct = await Product.findOneAndUpdate(
+            {"_id": id},
+            {$set: updateData},
+            { new: true, runValidators: true }
+        );
+
+        if (!updatedProduct) {
+            errors.notFound = 'Product not found in store';
+            failResponse(res, "Product not found", 500, errors);
+            return;
+        }
+
+        successResponse(res, updatedProduct, "Product updated successfully", 201); 
+        return;
+
+    } catch (err) {
+        failResponse(res, "Internal Server Error", 500, err);
+        return;
+    }
 }
 
 const deleteProduct = async (req: Request, res: Response) => {
