@@ -86,6 +86,7 @@ const addProduct = async (req: Request, res: Response) => {
 
                 await existingProduct.save();
                 await redis.set(`product:${existingProduct._id}`, JSON.stringify(existingProduct), "EX", 86400);
+                await clearPaginatedCache();
 
                 successResponse(res, existingProduct, "Product created successfully", 201);
                 return;
@@ -139,6 +140,7 @@ const updateProduct = async (req: Request, res: Response) => {
         }
 
         await redis.set(`product:${id}`, JSON.stringify(updatedProduct), "EX", 86400);
+        await clearPaginatedCache();
         successResponse(res, updatedProduct, "Product updated successfully", 201); 
         return;
 
@@ -166,6 +168,7 @@ const deleteProduct = async (req: Request, res: Response) => {
         }
 
         await redis.set(`product:${id}`, JSON.stringify(updatedProduct), "EX", 86400);
+        await clearPaginatedCache();
         successResponse(res, updatedProduct, "Product deleted successfully", 201); 
         return;
 
