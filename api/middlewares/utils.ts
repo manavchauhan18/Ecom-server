@@ -49,3 +49,10 @@ export const getDataFromRedis = ( keyPrefix: string ) => {
         }
     }
 }
+
+export const clearPaginatedCache = async () => {
+    const keys = await redis.keys("product:page:*");
+    if (keys.length > 0) {
+        await redis.del(...keys);
+    }
+};
