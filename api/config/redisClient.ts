@@ -1,8 +1,14 @@
 import Redis from "ioredis";
+import dotenv from "dotenv";
+
+dotenv.config();
+
+const redisHost = process.env.REDIS_HOST as string;
+const redisPort = process.env.REDIS_PORT as unknown as number;
 
 const redis = new Redis({
-    host: "127.0.0.1",
-    port: 6379,
+    host: redisHost,
+    port: redisPort,
     retryStrategy(times) {
         return Math.min(times * 50, 2000);
     },
