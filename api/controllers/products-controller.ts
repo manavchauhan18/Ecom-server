@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import product from "../database/schemas/product.schema";
 import { successResponse, failResponse } from "../scripts/responseStatus";
 import Product from "../database/schemas/product.schema";
+import { elasticConnection } from "../config/elasticSearch";
 import redis from "../config/redisClient";
 import { clearPaginatedCache } from "../middlewares/utils";
 
@@ -74,39 +75,35 @@ const addProduct = async (req: Request, res: Response) => {
         const { name, price, description, category, stock, value } = req.body;
         const errors: any = {};
 
-        const existingProduct = await Product.findOne({ name });
-        if(existingProduct) {
-            if(existingProduct.deleteStatus === true) {
-                existingProduct.deleteStatus = false;
-                existingProduct.price = price;
-                existingProduct.description = description;
-                existingProduct.category = category;
-                existingProduct.stock = stock;
-                existingProduct.value = value;
+        let product = await Product.findOne({ name });
 
-                await existingProduct.save();
-                await redis.set(`product:${existingProduct._id}`, JSON.stringify(existingProduct), "EX", 86400);
-                await clearPaginatedCache();
-
-                successResponse(res, existingProduct, "Product created successfully", 201);
-                return;
+        if(product) {
+            if(product.deleteStatus) {
+                Object.assign(product, { deleteStatus: false, price, description, category, stock, value });
             } else {
                 errors.duplicate = "Duplicate entry found."
                 failResponse(res, "The product already exists", 400, errors);
                 return;
             }
+        } else {
+            product = new Product({ name, price, description, category, stock, value });
         }
 
-        const newProduct = new product({ name, price, description, category, stock, value });
-        if(newProduct) {
-            const productId = newProduct._id;
-            await redis.set(`product:${productId}`, JSON.stringify(newProduct), "EX", 86400);
-        }
+        await product.save();
+        const { _id, ...elasticProduct } = product.toObject();
 
-        await newProduct.save();
+        await redis.set(`product:${product._id}`, JSON.stringify(product), "EX", 86400);
 
-        successResponse(res, newProduct, "Product created successfully", 201); 
+        await elasticConnection.index({
+            index: "products",
+            id: product._id.toString(),
+            document: elasticProduct
+        });
+        await clearPaginatedCache();
+
+        successResponse(res, product, "Product created successfully", 201); 
         return;
+
     } catch (err) {
         failResponse(res, "Internal Server Error", 500, err);
         return;
@@ -139,6 +136,12 @@ const updateProduct = async (req: Request, res: Response) => {
             return;
         }
 
+        await elasticConnection.update({
+            index: 'products',
+            id: id,
+            doc: updateData
+        })
+
         await redis.set(`product:${id}`, JSON.stringify(updatedProduct), "EX", 86400);
         await clearPaginatedCache();
         successResponse(res, updatedProduct, "Product updated successfully", 201); 
@@ -167,6 +170,11 @@ const deleteProduct = async (req: Request, res: Response) => {
             return;
         }
 
+        await elasticConnection.delete({
+            index: "products",
+            id: id,
+        });
+
         await redis.set(`product:${id}`, JSON.stringify(updatedProduct), "EX", 86400);
         await clearPaginatedCache();
         successResponse(res, updatedProduct, "Product deleted successfully", 201); 
@@ -178,10 +186,21 @@ const deleteProduct = async (req: Request, res: Response) => {
     }
 }
 
+const getSearchedProduct = ( req: Request, res: Response ) => {
+    try {
+        let trySys = new elasticConnection();
+        console.log(trySys);
+    } catch (err) {
+        failResponse(res, "Internal Server Error", 500, err);
+        return;
+    }
+}
+
 export default {
     listProducts,
     getProductById,
     addProduct,
     updateProduct,
-    deleteProduct
+    deleteProduct,
+    getSearchedProduct
 }
