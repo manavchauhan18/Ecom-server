@@ -6,7 +6,7 @@ export const rateLimiter = async ( req: Request, res: Response, next: NextFuncti
     try {
         const ip = req.ip || "unknown";
         const key = `rate:${ip}`;
-        console.log("key: ", key)
+
         const errors: any = {}
     
         const request = await redis.incr(key);

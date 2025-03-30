@@ -1,10 +1,10 @@
 import { Request, Response } from "express";
-import product from "../database/schemas/product.schema";
 import { successResponse, failResponse } from "../scripts/responseStatus";
 import Product from "../database/schemas/product.schema";
 import { elasticConnection } from "../config/elasticSearch";
 import redis from "../config/redisClient";
 import { clearPaginatedCache } from "../middlewares/utils";
+import { errors } from "@elastic/elasticsearch";
 
 const listProducts = async (req: Request, res: Response) => {
     try {
@@ -174,7 +174,7 @@ const deleteProduct = async (req: Request, res: Response) => {
 
         await redis.set(`product:${id}`, JSON.stringify(updatedProduct), "EX", 86400);
         await clearPaginatedCache();
-        
+
         successResponse(res, updatedProduct, "Product deleted successfully", 201); 
         return;
 
@@ -184,9 +184,29 @@ const deleteProduct = async (req: Request, res: Response) => {
     }
 }
 
-const getSearchedProduct = ( req: Request, res: Response ) => {
+const getSearchedProduct = async ( req: Request, res: Response ) => {
     try {
-        let trySys = new elasticConnection();
+        const { searchString } = req.body;
+        const errors: any = {};
+
+        const { hits } = await elasticConnection.search({
+            index: "products",
+            query: {
+                multi_match: {
+                    query: searchString,
+                    fields: ["name", "description", "category"],
+                },
+            },
+        });
+
+        if(hits && hits.total && (typeof hits.total === "number" ? hits.total > 0 : hits.total.value > 0)){
+            successResponse(res, hits.hits, "Search results", 200);
+            return;
+        } else {
+            errors.notFound = "No product found with the given search string"
+            failResponse(res, "No product found", 400, errors);
+            return; 
+        }
     } catch (err) {
         failResponse(res, "Internal Server Error", 500, err);
         return;

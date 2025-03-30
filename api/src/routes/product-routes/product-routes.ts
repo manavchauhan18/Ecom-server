@@ -10,6 +10,7 @@ router.get("/productid/:id", rateLimiter, getDataFromRedis('product'), productCo
 router.post("/create", validateData, productController.addProduct);
 router.delete('/deleteproductbyid/:id', productController.deleteProduct);
 router.put('/updateproduct/:id', validateData, productController.updateProduct);
+
 router.get("/searchproduct", productController.getSearchedProduct);
 
 module.exports = router; 
