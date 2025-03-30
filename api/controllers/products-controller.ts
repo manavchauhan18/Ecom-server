@@ -79,7 +79,7 @@ const addProduct = async (req: Request, res: Response) => {
 
         if(product) {
             if(product.deleteStatus) {
-                Object.assign(product, { deleteStatus: false, price, description, category, stock, value });
+                Object.assign(product, { deleteStatus: false });
             } else {
                 errors.duplicate = "Duplicate entry found."
                 failResponse(res, "The product already exists", 400, errors);
@@ -114,39 +114,36 @@ const updateProduct = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
         const { name, price, description, category, stock, value } = req.body;
-
-        const updateData: any = {};
-        if (name) updateData.name = name;
-        if (price) updateData.price = price;
-        if (description) updateData.description = description;
-        if (category) updateData.category = category;
-        if (stock) updateData.stock = stock;
-        if (value) updateData.value = value;
         const errors: any = {};
 
-        const updatedProduct = await Product.findOneAndUpdate(
-            {"_id": id},
-            {$set: updateData},
-            { new: true, runValidators: true }
-        );
+        let product = await Product.findById(id);
 
-        if (!updatedProduct) {
+        if(product) {
+            if(product.deleteStatus) {
+                Object.assign(product, { deleteStatus: false, price, description, category, stock, value });
+            } else {
+                Object.assign(product, { name: name, price: price, description: description, category: category, stock: stock, value: value });
+            }
+        } else {
             errors.notFound = 'Product not found in store';
             failResponse(res, "Product not found", 500, errors);
             return;
         }
 
-        await elasticConnection.update({
-            index: 'products',
-            id: id,
-            doc: updateData
-        })
+        await product.save();
 
-        await redis.set(`product:${id}`, JSON.stringify(updatedProduct), "EX", 86400);
+        const { _id, ...elasticProduct } = product.toObject();
+        await redis.set(`product:${product._id}`, JSON.stringify(product), "EX", 86400);
+
+        await elasticConnection.index({
+            index: "products",
+            id: product._id.toString(),
+            document: elasticProduct
+        });
         await clearPaginatedCache();
-        successResponse(res, updatedProduct, "Product updated successfully", 201); 
-        return;
 
+        successResponse(res, product, "Product updated successfully", 201); 
+        return;
     } catch (err) {
         failResponse(res, "Internal Server Error", 500, err);
         return;
@@ -177,6 +174,7 @@ const deleteProduct = async (req: Request, res: Response) => {
 
         await redis.set(`product:${id}`, JSON.stringify(updatedProduct), "EX", 86400);
         await clearPaginatedCache();
+        
         successResponse(res, updatedProduct, "Product deleted successfully", 201); 
         return;
 
@@ -189,7 +187,6 @@ const deleteProduct = async (req: Request, res: Response) => {
 const getSearchedProduct = ( req: Request, res: Response ) => {
     try {
         let trySys = new elasticConnection();
-        console.log(trySys);
     } catch (err) {
         failResponse(res, "Internal Server Error", 500, err);
         return;
