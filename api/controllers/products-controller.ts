@@ -4,7 +4,6 @@ import Product from "../database/schemas/product.schema";
 import { elasticConnection } from "../config/elasticSearch";
 import redis from "../config/redisClient";
 import { clearPaginatedCache } from "../middlewares/utils";
-import { errors } from "@elastic/elasticsearch";
 
 const listProducts = async (req: Request, res: Response) => {
     try {
